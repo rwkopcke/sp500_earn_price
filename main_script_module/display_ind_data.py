@@ -38,7 +38,6 @@ def display_ind():
     import matplotlib.pyplot as plt
     import seaborn as sn
     import pyarrow
-    import pandas
     import scipy
     import numpy as np
 

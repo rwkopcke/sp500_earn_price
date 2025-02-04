@@ -5,19 +5,23 @@
    It writes these data as polars dataframes to .parquet files
         and writes a record of the files that it has read and writen
         as a dictionary to a .json file
-    
-   The relative addresses of the files within this project are declared
-   in paths.py    
+        
+   see sp_paths.py
+        for the addresses of the files within this project are declared
+        for advice in resetting paths for debugging and for reinitializing
+        the project's output files
 
-   The polars dataframes contain from main_script_module import sp_paths as spthe latest projections of earnings for the
-   S&P500 within each quarter since late 2017. A separate polars dataframe
-   containsthe actual earnings and the value of the index for each quarter 
-   beginning in 1988. This dataframe also contains actual values for 
-   operating margins, revenues, book values, dividends, and other 
-   actual data reported by S&P, plus actual values for the 10-year TIPS.
+   The polars dataframes in input_output
+        the latest projections of earnings for the
+        S&P500 within each quarter since late 2017. 
+   A separate polars dataframe contains
+        the actual earnings and the value of the index for each quarter 
+        beginning in 1988. This dataframe also contains actual values for 
+        operating margins, revenues, book values, dividends, and other 
+        actual data reported by S&P, plus actual values for the 10-year TIPS.
    
    The addresses of documents for this project appear in this program's 
-   project directory: S&P500_PE/sp500_pe/__init__.py
+   project directory: S&P500_PE/sp500_pe/sp_paths.py
 '''
 
 #######################  Parameters  ##################################

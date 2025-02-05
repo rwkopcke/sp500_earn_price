@@ -39,7 +39,7 @@
 - https://fred.stlouisfed.org/series/DFII10/chart
 
 ### file structure
-richardkopcke@MacBookPro sp500_earn_price % tree
+*/sp500_earn_price % tree
 ```     
 .
 ├── README.md

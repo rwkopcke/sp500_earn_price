@@ -154,12 +154,14 @@ def update():
         print(f'Read record_dict from: \n{sp.RECORD_DICT_ADDR}')
         print('============================================\n')
         
+        '''
         # backup record_dict
         with sp.BACKUP_RECORD_DICT_ADDR.open('w') as f:
             json.dump(record_dict, f)
         print('============================================')
         print(f'Wrote record_dict to: \n{sp.BACKUP_RECORD_DICT_ADDR}')
         print('============================================\n')
+        '''
         
     else:
         print('\n============================================')
@@ -193,9 +195,18 @@ def update():
     if len(new_files_set) == 0:
         print('\n============================================')
         print(f'No new files in {sp.INPUT_DIR}')
-        print('All files have been read previously')
+        print('All files have been read previously.')
+        print('No data files have been written.')
         print('============================================\n')
+        
         return
+    
+    # backup record_dict and proceed
+    with sp.BACKUP_RECORD_DICT_ADDR.open('w') as f:
+        json.dump(record_dict, f)
+    print('============================================')
+    print(f'Wrote record_dict to: \n{sp.BACKUP_RECORD_DICT_ADDR}')
+    print('============================================\n')
         
 # there are new data, add new files to historical record
     record_dict['prev_files'] \
@@ -539,8 +550,19 @@ def update():
         if CONTINUE_PROCESS not in ['continue', 'Continue']:
             print('\n============================================')
             print('Continue process is not selected:')
-            print('No data files have been written. End process')
+            print('No data files have been written.')
             print('============================================\n')
+            
+            '''
+            with sp.BACKUP_RECORD_DICT_ADDR.open('r') as f:
+                record_dict = json.load(f)
+            with sp.RECORD_DICT_ADDR.open('w') as f:
+                json.dump(record_dict, f)
+            print('============================================')
+            print(f'Restored {sp.RECORD_DICT_ADDR} from \n{sp.BACKUP_RECORD_DICT_ADDR}')
+            print('============================================\n')
+            '''
+            
             return
 ############
 

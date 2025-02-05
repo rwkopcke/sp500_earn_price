@@ -308,7 +308,7 @@ def display():
                               .alias('quality'))\
                 .drop('reported', 'operating')\
                 .sort(by= 'yr_qtr')
-    title = 'Quality of Earnings: ratio of 12-month reported to operating earings'
+    title = 'Quality of Earnings: ratio of 12-month reported to operating earnings'
     
     pf.plots_page2(ax['quality'], df,
                     ylim= (None, None),

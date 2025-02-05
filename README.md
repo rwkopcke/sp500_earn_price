@@ -118,22 +118,22 @@
 
     - action 1: display_data.py
         - reads record_dict.json
-        - reads sp500_ind_df.parquet files in output_dir/
+        - reads sp500_pe_df_actuals.parquet file in output_dir/
+        - reads sp-500-eps-est yyyy-mm-dd.parquet in estimates/
         - writes .pdf pages to display_dir/
 
     - action 2: display_ind_data.py
         - reads files in output_dir/
+        - reads sp500_ind_df.parquet file in output_dir/
         - writes .pdf pages to display_dir/
-   
-### pdf pages constitute the output
 <br>
 <br>
 
 ## Other Information
 ### sp_paths.py
--  Contains global variables with addresses for all files
-    - addresses of all folders and files fixed by the location of the sp500_ep_project folder
-    - user must specify location of ARCHIVE which contains input files after they have been read
+-  Contains global addresses for all files
+    - addresses of all folders and files (except the ARCHIVE_DIR) fixed by the location of the sp500_ep_project folder, specified by user
+    - user must specify location of ARCHIVE_DIR which contains input files after they have been read
     - addresses the project files fixed by the tree shown above for the file structure
 - uses Path()
 
@@ -142,11 +142,11 @@
 - polars dataframe with projected earnings
 - from sp-500-eps-est YYYY MM DD.xlsx
 - uses files with the latest date for each quarter
-- creates an output file for each input file
+- creates one sp-500-eps-est YYYY-MM-DD.parquet file for each input file
 
 #### sp500_pe_df_actuals.parquet
 - one polars dataframe for all historical data
-- completely udated from new input data
+- updated from new input data
 ### record_dict.json
 - records all data files read and written
 - records which files have been used
@@ -160,9 +160,8 @@
 2. debug
     - ensure that DFII10.xlsx is in input_dir
     - move the latest sp input file from archive to input_dir
-    - replace record_dict,json with its backup file from backup_dir
+    - replace record_dict.json with its backup file from backup_dir
 3. reinitialize
     - ensure that DFII10.xlsx in INPUT_DIR has data for all quarters
-    - after setting ARCHIVE_DIR above, reset INPUT_DIR
-    - INPUT_DIR = ARCHIVE_DIR
+    - where indicated in sp_paths.py insert command INPUT_DIR = ARCHIVE_DIR
     - after reinitialization, remove the command INPUT_DIR = ARCHIVE_DIR

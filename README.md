@@ -40,7 +40,7 @@
 
 ### file structure
 richardkopcke@MacBookPro sp500_earn_price % tree
-'''bash          
+```     
 .
 ├── README.md
 ├── exe_earn_price.py
@@ -82,7 +82,7 @@ richardkopcke@MacBookPro sp500_earn_price % tree
 │   └── update_data.py
 ├── pyproject.toml
 └── uv.lock
-'''
+```
 <br>
 <br>
 

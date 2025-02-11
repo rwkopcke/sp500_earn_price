@@ -1,4 +1,5 @@
 import polars as pl
+import sys
 
 def plots_page0(ax, df,
                 title= None, 
@@ -13,7 +14,7 @@ def plots_page0(ax, df,
         the remaining cols are line plots
         the legend names of all plotted series
            are the col names in df, 
-           list(df.columns)[2:]
+           list(df.columns)[2:]).sort()
     '''
     
     # create the title and labels for the plot
@@ -28,7 +29,10 @@ def plots_page0(ax, df,
     #style_ = ['dashed', 'dotted', 'dotted']
     
     # df.columns[1] is 'actual', see below
-    for name in list(df.columns)[2:]:
+    for name in sorted(list(df.columns)[2:]):
+        # if name has no data points, skip
+        if df[name].count() == 0:
+            continue
         # if name has only one data point
         if df[name].count() == 1:
             ax.scatter(yq, df.select(name), 
@@ -71,7 +75,14 @@ def plots_page0(ax, df,
               title_fontsize= 9,
               fontsize= 8,
               loc= 'upper left')
-    
+              
+    for idx in range(5):
+        y = idx * 50 + 100
+        ax.hlines(y=y, color='lightgray',
+                  xmin= min(yq),
+                  xmax= max(yq),
+                  linestyle= 'dotted')
+    '''
     ax.hlines(y=200, color='lightgray',
               xmin= min(yq),
               xmax= max(yq),
@@ -84,6 +95,7 @@ def plots_page0(ax, df,
               xmin= min(yq),
               xmax= max(yq),
               linestyle= 'dotted')
+    '''
     
     return ax
 

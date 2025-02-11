@@ -82,20 +82,6 @@ def plots_page0(ax, df,
                   xmin= min(yq),
                   xmax= max(yq),
                   linestyle= 'dotted')
-    '''
-    ax.hlines(y=200, color='lightgray',
-              xmin= min(yq),
-              xmax= max(yq),
-              linestyle= 'dotted')
-    ax.hlines(y=250, color='lightgray',
-              xmin= min(yq),
-              xmax= max(yq),
-              linestyle= 'dotted')
-    ax.hlines(y=150, color='lightgray',
-              xmin= min(yq),
-              xmax= max(yq),
-              linestyle= 'dotted')
-    '''
     
     return ax
 

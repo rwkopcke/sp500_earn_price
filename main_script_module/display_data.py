@@ -63,6 +63,7 @@ def display():
     from main_script_module import sp_paths as sp
     from helper_func_module import plot_func as pf
     from helper_func_module import display_helper_func as dh
+    from helper_func_module import helper_func as hp
     
 # read record_dict
     if sp.RECORD_DICT_ADDR.exists():
@@ -149,6 +150,7 @@ def display():
     # subsets of columns for op eps (top panel)
     df = data_df.select(['yr_qtr', '12m_op_eps'])
     p_dict_columns = ['12m_op_eps', 'yr_qtr']
+    
     df = dh.page0_df(df, proj_dict, p_dict_columns, '12m_op_eps')\
                 .rename({'12m_op_eps': 'actual'})\
                 .sort(by= 'yr_qtr')
@@ -165,10 +167,11 @@ def display():
     # subsets of columns for rep eps (bottom panel)
     df = data_df.select(['yr_qtr', '12m_rep_eps'])
     p_dict_columns = ['12m_rep_eps', 'yr_qtr']
+    
     df = dh.page0_df(df, proj_dict, p_dict_columns, '12m_rep_eps')\
                 .rename({'12m_rep_eps': 'actual'})\
                 .sort(by= 'yr_qtr')
-    
+
     pf.plots_page0(ax['reported'], df,
                 title= ' \nProjections of Reported EPS',
                 ylim= (75, None),

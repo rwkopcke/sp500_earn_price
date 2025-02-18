@@ -54,17 +54,20 @@ SHT_IND_NAME = 'SECTOR EPS'
 # all specific individual column designations are letters
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+ACTUAL_KEYS = ['ACTUALS', 'Actuals']
+
 SHT_EST_DATE_PARAMS = {
     'date_keys' : ['Date', 'Data as of the close of:'],
     'value_col_1' : 'D',
-    'date_key_2' : ['ACTUALS'],
+    'date_key_2' : ACTUAL_KEYS,
     'value_col_2' : 'B',
     'column_names' : COLUMN_NAMES,
     'yr_qtr_name' : YR_QTR_NAME
 }
 
 SHT_HIST_PARAMS = {
-    'act_key' : ['ACTUALS', 'Actuals'],
+    'act_key' : ACTUAL_KEYS,
+    'end_key' : None,
     'first_col' : 'A',
     'last_col' : 'J',
     'skip_cols' : [4, 7],
@@ -91,6 +94,7 @@ SHT_IND_PARAMS = {
 
 SHT_QTR_PARAMS = {
     'act_key' : ['END'],
+    'end_key' : None,
     'first_col' : 'A',
     'last_col' : 'I',
     'skip_cols' : [1, 2, 7],
@@ -109,6 +113,7 @@ SHT_EST_PROJ_DATE_PARAMS = {
 
 SHT_EST_PROJ_PARAMS = {
     'act_key' : ['ESTIMATES'],
+    'end_key' : ACTUAL_KEYS,
     'first_col' : 'A',
     'last_col' : 'J',
     'skip_cols' : [1, 4, 7],
@@ -150,18 +155,10 @@ def update():
     if sp.RECORD_DICT_ADDR.exists():
         with sp.RECORD_DICT_ADDR.open('r') as f:
             record_dict = json.load(f)
+
         print('\n============================================')
         print(f'Read record_dict from: \n{sp.RECORD_DICT_ADDR}')
         print('============================================\n')
-        
-        '''
-        # backup record_dict
-        with sp.BACKUP_RECORD_DICT_ADDR.open('w') as f:
-            json.dump(record_dict, f)
-        print('============================================')
-        print(f'Wrote record_dict to: \n{sp.BACKUP_RECORD_DICT_ADDR}')
-        print('============================================\n')
-        '''
         
     else:
         print('\n============================================')
@@ -183,38 +180,46 @@ def update():
 # create list input files not previously seen
 # and add them to 'prev_files'
     prev_files_set = set(record_dict['prev_files'])
-    
     new_files_set = \
         set(str(f.name) 
             for f in sp.INPUT_DIR.glob('sp-500-eps*.xlsx'))
+        
+    if len(new_files_set) == 0:
+        print('\n============================================')
+        print(f'No eligible files in {sp.INPUT_DIR}')
+        print('No data files have been written.')
+        print('============================================\n')
+        return
     
     new_files_set = new_files_set - prev_files_set
     new_files_list = list(new_files_set)
     
-    # if no new data, print alert and exit
-    if len(new_files_set) == 0:
+    if len(new_files_list) == 0:
         print('\n============================================')
         print(f'No new files in {sp.INPUT_DIR}')
         print('All files have been read previously.')
         print('No data files have been written.')
         print('============================================\n')
-        
         return
     
-    # backup record_dict and proceed
+    # backup existing record_dict and create new record_dict
     with sp.BACKUP_RECORD_DICT_ADDR.open('w') as f:
         json.dump(record_dict, f)
     print('============================================')
     print(f'Wrote record_dict to: \n{sp.BACKUP_RECORD_DICT_ADDR}')
     print('============================================\n')
-        
-# there are new data, add new files to historical record
-    record_dict['prev_files'] \
-        .extend(list(new_files_set))
+
+# add the new files to historical record
+    record_dict['latest_used_file'] = max(new_files_list)
+    if record_dict['prev_files']:
+        record_dict['prev_files'] = \
+            list(set(record_dict['prev_files']) | new_files_set)
+    else:
+        record_dict['prev_files'] = list(new_files_set)
     record_dict['prev_files'].sort(reverse= True)
 
 # find the latest new file for each quarter (agg(sort).last)
-    data_df = pl.DataFrame(new_files_list, 
+    data_df = pl.DataFrame(list(new_files_set), 
                           schema= ["new_files"],
                           orient= 'row')\
                 .with_columns(pl.col('new_files')
@@ -233,15 +238,15 @@ def update():
 # combine with prev_files where new_files has larger date for year_qtr
 # (new files can update and replace prev files for same year_qtr)
 # new_files has only one file per quarter -- no need for group_by
-    prev_used = record_dict['prev_used_files']
-    if len(prev_used) > 0:
-        used_df = pl.DataFrame(prev_used, 
+    seq_ = record_dict['prev_used_files']
+    if len(seq_) > 0:
+        used_df = pl.DataFrame(pl.Series(values= seq_), 
                                schema= ['used_files'],
                                orient= 'row')\
-                .with_columns(pl.col('used_files')
+                    .with_columns(pl.col('used_files')
                             .map_batches(hp.string_to_date)
                             .alias('date'))\
-                .with_columns(pl.col('date')
+                    .with_columns(pl.col('date')
                             .map_batches(hp.date_to_year_qtr)
                             .alias('yr_qtr'))
                 
@@ -276,8 +281,13 @@ def update():
                                     .is_not_null()))\
                             .to_list()
                             
+        if record_dict['prev_used_files']:
+            record_dict['prev_used_files'] = \
+                list(set(record_dict['prev_used_files']) - 
+                     set(files_to_remove_list))
+        record_dict['prev_used_files'].sort(reverse= True)
+                            
         for file in files_to_remove_list:
-            record_dict['prev_used_files'].remove(file)
             file_list = file.split(" ", 1)
             proj_file = \
                 f'{file_list[0]} {file_list[1]
@@ -295,7 +305,8 @@ def update():
                 print(f"Cannot remove: \n{proj_file} from: record_dict.json")
                 print(f'File name is not in list at key: output_proj_files')
                 print('============================================\n')
-            # using Path() object
+                
+            # using Path() object, also remove the file from the dir/
             address_proj_file = sp.OUTPUT_PROJ_DIR / proj_file
             if address_proj_file.exists():
                 address_proj_file.unlink()
@@ -311,7 +322,7 @@ def update():
                 print(f'{address_proj_file} does not exist')
                 print('============================================\n') 
                 
-    # when len(prev_used) == 0; all data is from new_data
+    # when len(seq_) == 0; all data is from new_data
     else:
         used_df = data_df
 
@@ -329,16 +340,19 @@ def update():
         pl.Series(used_df.select('new_files')).to_list()
             
     # add dates of projections and year_qtr to record_dict
-    record_dict['prev_used_files'] \
-        .extend(files_to_read_list)
+    if record_dict['prev_used_files']:
+        record_dict['prev_used_files'] = \
+            list(set(record_dict['prev_used_files']) -
+                 set(files_to_read_list))
+    else:
+        record_dict['prev_used_files'] = files_to_read_list
+    
     record_dict['prev_used_files'].sort(reverse= True)
         
-    record_dict['proj_yr_qtrs']= \
-        hp.date_to_year_qtr(
-                hp.string_to_date(record_dict['prev_used_files'])
-            ).to_list()
-    # most recent is first
-    record_dict["latest_used_file"] = record_dict['prev_used_files'][0]
+    record_dict['proj_yr_qtrs'] = \
+        sorted(hp.date_to_year_qtr(
+            hp.string_to_date(record_dict['prev_used_files']))\
+                   .to_list(), reverse= True)
 
 ## +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++              
 ## +++++  fetch the historical data  +++++++++++++++++++++++++++++++++++++++
@@ -357,18 +371,7 @@ def update():
     real_rt_df = rd.fred_reader(active_sheet,
                                 **SHT_FRED_PARAMS)
     
-## ACTUAL DATA from existing .parquet file (to be updated below)
-    # the rows (qtrs) not to be updated are the rows that
-    # do not contain null in the op_eps col
-    # put the yr_qtr for these rows in the set rows_no_update
-    actual_df = pl.read_parquet(sp.OUTPUT_HIST_ADDR)
-    
-    rows_not_to_update = set(pl.Series(actual_df
-                                   .drop_nulls(subset='op_eps')
-                                   .select(pl.col(YR_QTR_NAME)))
-                               .to_list())
-    
-## NEW HISTORICAL P and E from new excel file
+## WKSHT with NEW HISTORICAL P and E from new excel file
     latest_file_addr = sp.INPUT_DIR / record_dict["latest_used_file"]
     
     active_workbook = load_workbook(filename= latest_file_addr,
@@ -377,11 +380,27 @@ def update():
     
     # most recent date and prices
     active_sheet = active_workbook[SHT_EST_NAME]
-    name_date, new_df = rd.read_sp_date(active_sheet, 
+    
+## ACTUAL DATA from existing .parquet file (to be updated below)
+    # the rows (qtrs) not to be updated are the rows that
+    # do not contain null in the op_eps col
+    # put the yr_qtr for these rows in the set rows_no_update
+    if sp.OUTPUT_HIST_ADDR.exists():
+        actual_df = pl.read_parquet(sp.OUTPUT_HIST_ADDR)
+    
+        rows_not_to_update = set(pl.Series(actual_df
+                                    .drop_nulls(subset='op_eps')
+                                    .select(pl.col(YR_QTR_NAME)))
+                                .to_list())
+    else:
+        rows_not_to_update = []
+
+## NEW HISTORICAL DATA
+    # new_df dates and latest prices, beyond historical data
+    name_date, add_df = rd.read_sp_date(active_sheet, 
                                         **SHT_EST_DATE_PARAMS,
                                         include_prices= True)
-    
-    # load new historical data, if any exists
+    # load new historical data
     # omit rows whose yr_qtr appears in the rows_no_update list
     df = rd.sp_loader(active_sheet,
                       rows_not_to_update,
@@ -390,7 +409,7 @@ def update():
     # if any date is None, halt
     if (name_date is None or
         any([item is None
-            for item in actual_df['date']])):
+            for item in add_df['date']])):
         
         print('\n============================================')
         print(f'Abort using {latest_file_addr} \nmissing history date')
@@ -399,16 +418,15 @@ def update():
         print('============================================\n')
         sys.exit()
         
-    new_df = pl.concat([new_df, df], how= "diagonal")
+    # update add_df with new historical data
+    add_df = pl.concat([add_df, df], how= "diagonal")
                
-    # build new_df with to update rows in actual_df
+    # build new_df with rr (to update rows in actual_df)
     # merge new real_rates with new p and e
-    new_df = new_df.join( 
-             real_rt_df, 
-             how="left", 
-             on=[YR_QTR_NAME],
-             coalesce= True)
-    
+    add_df = add_df.join(real_rt_df, 
+                         how="left", 
+                         on=[YR_QTR_NAME],
+                         coalesce= True)
     del real_rt_df
     del df
     gc.collect()
@@ -418,11 +436,10 @@ def update():
                                   rows_not_to_update,
                                   **SHT_BC_MARG_PARAMS)
     
-    new_df = new_df.join(margins_df, 
+    add_df = add_df.join(margins_df, 
                          how="left", 
                          on= YR_QTR_NAME,
                          coalesce= True)
-    
     del margins_df
     gc.collect()
 
@@ -437,7 +454,7 @@ def update():
                  .cast({~(cs.temporal() | cs.string()): pl.Float32,
                         cs.datetime(): pl.Date})
     
-    new_df = new_df.join(qtrly_df,  
+    add_df = add_df.join(qtrly_df,  
                          how= "left", 
                          on= [YR_QTR_NAME],
                          coalesce= True)
@@ -445,59 +462,72 @@ def update():
     del qtrly_df
     gc.collect()
     
-## ACTUAL_DF update: replace rows with rows from new_df
-    # align cols of actual_df with new_df
+## ACTUAL_DF update: remove rows to be updated and concat with add_df
+    # align cols of actual_df with add_df
     # ensure rows do not overlap
-    actual_df = pl.concat([new_df.filter(
+    if sp.OUTPUT_HIST_ADDR.exists():
+        actual_df = pl.concat([add_df.filter(
                                      ~pl.col(YR_QTR_NAME)
                                       .is_in(rows_not_to_update))
                                   .sort(by= YR_QTR_NAME),
-                           actual_df.select(new_df.columns)
-                                    .filter(
-                                        pl.col(YR_QTR_NAME)
-                                        .is_in(rows_not_to_update))
-                                    .sort(by= YR_QTR_NAME)],
-                          how= 'vertical')
+                               actual_df.select(
+                                      add_df.columns)
+                                  .filter(pl.col(YR_QTR_NAME)
+                                      .is_in(rows_not_to_update))
+                                  .sort(by= YR_QTR_NAME)],
+                               how= 'vertical')
+    else:
+        actual_df = add_df.sort(by= YR_QTR_NAME)
+    
+    del add_df
+    gc.collect()
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 ## INDUSTRIAL DATA
     # read stored data
-    ind_df = pl.read_parquet(sp.OUTPUT_IND_ADDR)\
-                    .sort(by= 'year', descending= True)
+    if sp.OUTPUT_IND_ADDR.exists():
+        ind_df = pl.read_parquet(sp.OUTPUT_IND_ADDR)\
+                        .sort(by= 'year', descending= True)
                     
-    years_no_update = set(pl.Series(ind_df
-                               .drop_nulls(subset='SP500_rep_eps')
-                               .select(pl.col('year')))
-                            .to_list())
+        years_no_update = set(pl.Series(ind_df
+                                .drop_nulls(subset='SP500_rep_eps')
+                                .select(pl.col('year')))
+                                .to_list())
+    else:
+        years_no_update = []
     
     # find new industry data
     active_sheet = active_workbook[SHT_IND_NAME]
-    new_ind_df = rd.industry_loader(active_sheet,
+    add_ind_df = rd.industry_loader(active_sheet,
                                     years_no_update,
                                     **SHT_IND_PARAMS)
-    
-    # add col with Q4 value of real_int_rate each year
-    new_ind_df = new_ind_df.join(
-                    actual_df.select([YR_QTR_NAME, 'real_int_rate'])
+    # add col with Q4 value of real_int_rate each year from actual_df
+    add_ind_df = \
+        add_ind_df.join(
+                actual_df.select([YR_QTR_NAME, 'real_int_rate'])
                             .filter(pl.col(YR_QTR_NAME)
-                                .map_elements(lambda x: x[-1:]=='4',
-                                                return_dtype= bool))
+                            .map_elements(lambda x: x[-1:]=='4',
+                                            return_dtype= bool))
                             .with_columns(pl.col(YR_QTR_NAME)
-                                .map_elements(lambda x: x[0:4],
-                                                return_dtype= str)
-                                .alias('year'))
-                        .drop(YR_QTR_NAME),
-                    on= 'year',
-                    how= 'left',
-                    coalesce= True)\
-                .sort(by= 'year', descending= True)
+                            .map_elements(lambda x: x[0:4],
+                                            return_dtype= str)
+                            .alias('year'))
+                            .drop(YR_QTR_NAME),
+                        on= 'year',
+                        how= 'left',
+                        coalesce= True)\
+                 .sort(by= 'year', descending= True)\
+                 .cast({~cs.string() : pl.Float32})
     
-    years = pl.Series(new_ind_df['year']).to_list()
-    ind_df = pl.concat([new_ind_df,
-                        ind_df.filter(~pl.col('year')
-                                        .is_in(years))],
-                        how= 'vertical')
+    if sp.OUTPUT_IND_ADDR.exists():
+        years = pl.Series(add_ind_df['year']).to_list()
+        ind_df = pl.concat([add_ind_df,
+                            ind_df.filter(~pl.col('year')
+                                            .is_in(years))],
+                            how= 'vertical')
+    else:
+        ind_df = add_ind_df.sort(by= 'year', descending= True)
 
 ## +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 ## +++++ update projection files +++++++++++++++++++++++++++++++++++++++++++
@@ -505,6 +535,7 @@ def update():
 
     # ordinarily a very short list
     # loop through files_to_read, fetch projections of earnings for each date
+    add_proj_yr_qtrs_list = []
     failure_to_read_lst = []
     for file in files_to_read_list:
         # echo file name and address to console
@@ -537,6 +568,11 @@ def update():
             failure_to_read_lst.append(file)
             continue
         
+        year_quarter = \
+            f'{name_date.year}-Q{(int(name_date.month) - 1) // 3 + 1}'
+            
+        add_proj_yr_qtrs_list.append(year_quarter)
+        
 ############
         # FOR DEBUGGING -- run program, with the value True
         # True allows inspection of dfs & aborts writing new files
@@ -544,6 +580,7 @@ def update():
         # remove the file from four entries in record_dict
         # change the name of the most recent file's parquet to 
         # to the name for the second-most recent file's parquet
+        '''
         CONTINUE_PROCESS = input('\nTo write new data files\n' +
                              'and continue processing, type the word Continue: ')
 
@@ -552,18 +589,7 @@ def update():
             print('Continue process is not selected:')
             print('No data files have been written.')
             print('============================================\n')
-            
-            '''
-            with sp.BACKUP_RECORD_DICT_ADDR.open('r') as f:
-                record_dict = json.load(f)
-            with sp.RECORD_DICT_ADDR.open('w') as f:
-                json.dump(record_dict, f)
-            print('============================================')
-            print(f'Restored {sp.RECORD_DICT_ADDR} from \n{sp.BACKUP_RECORD_DICT_ADDR}')
-            print('============================================\n')
-            '''
-            
-            return
+        '''
 ############
 
 ## +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -579,6 +605,14 @@ def update():
         
         with output_file_address.open('w') as f:
             proj_df.write_parquet(f)
+            
+## update RECORD
+    proj_list = record_dict['proj_yr_qtrs']
+    if proj_list:
+        proj_list.extend(add_proj_yr_qtrs_list)
+    else:
+        proj_list = [year_quarter]
+    record_dict['proj_yr_qtrs'] = sorted(proj_list, reverse= True)
             
 ## +++++ write history file ++++++++++++++++++++++++++++++++++++++++++++
     # move any existing hist file in output_dir to backup
@@ -650,6 +684,7 @@ def update():
     record_dict['prev_files'].sort(reverse= True)
     record_dict['prev_used_files'].sort(reverse= True)
     record_dict['output_proj_files'].sort(reverse= True)
+    record_dict['proj_yr_qtrs'].sort(reverse= True)
             
 ## store record_dict
     with sp.RECORD_DICT_ADDR.open('w') as f:

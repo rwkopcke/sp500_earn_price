@@ -30,7 +30,7 @@ def dt_str_to_date(item):
     '''
         input either str or datetime obj
         if str, convert to datetime obj
-        return datetime.date
+        return datetime value
     '''
     
     if isinstance(item, str):
@@ -90,11 +90,12 @@ def yrqtr_to_yr(series):
                       for yq in series])
     
 
-def find_key_row(wksht, search_col, start_row, key_values= None):
+def find_key_row(wksht, search_col, start_row, key_values= None,
+                 is_stop_row= False):
     '''
         for key_values (either None or a list),
         find cell containing (one of) the specified key(s)
-        crawl down col A; return the row number of the first match
+        crawl down search col; return the row number of the first match
         this row_number typically exceeds the last row to read by +1
     '''
     
@@ -105,11 +106,16 @@ def find_key_row(wksht, search_col, start_row, key_values= None):
     while row_number < max_to_read:
         item = wksht[f'{search_col}{row_number}'].value
         
+        # None is a default key value for ending the search
+        # if not none, then check explicit key_values
+        if is_stop_row:
+            if item_matches_key(item, None):
+                return row_number
+        
         if item_matches_key(item, key_values):
             return row_number
         row_number += 1                                                     
     return 0
-
 
 def item_matches_key(item, keys):
     '''
@@ -126,8 +132,8 @@ def item_matches_key(item, keys):
     if not (type(item) is str):
         return False
     
-    # at this point, keys must be a list of strings
-    # if singleton, convert to list
+    # item is str, keys must be a list of strs
+    # if keys singleton, convert to list
     if isinstance(keys, str):
         keys = list(keys)
     

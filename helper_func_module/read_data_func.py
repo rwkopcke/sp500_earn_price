@@ -37,10 +37,12 @@ def read_sp_date(wksht,
         sys.exit()
     
     # fetch row for latest date and price
-    key_row = hp.find_key_row(wksht, 'A', 1, date_keys)
+    key_row = hp.find_key_row(wksht, 'A', 1, 
+                              key_values= date_keys)
 
     if (key_row == 0):
         print('\n============================================')
+        print('In read_data_funct.py read_sp_date, date keys:')
         print(f'Found no {date_keys} in {wksht}')
         print('============================================\n')
         sys.exit()
@@ -60,10 +62,12 @@ def read_sp_date(wksht,
     price_lst.append(wksht[f'{value_col_1}{key_row + 1}'].value)
     
     # fetch next date and price
-    key_row = hp.find_key_row(wksht, 'A', key_row, date_key_2)
+    key_row = hp.find_key_row(wksht, 'A', key_row, 
+                              key_values= date_key_2)
     
     if (key_row == 0):
         print('\n============================================')
+        print('In read_data_func.py read_sp_date, for date_key_2:')
         print(f'Found no {date_key_2} in {wksht}')
         print('============================================\n')
         sys.exit()
@@ -101,7 +105,7 @@ def data_block_reader(wksht, start_row, stop_row,
     
 
 def sp_loader(wksht, rows_no_update,
-                act_key, first_col, last_col,
+                act_key, end_key, first_col, last_col,
                 skip_cols= [], column_names= [],
                 yr_qtr_name= ''):
     '''
@@ -113,18 +117,24 @@ def sp_loader(wksht, rows_no_update,
     
     # fetch data from wksht
     # fix the block of rows and cols that contain the data
-    key_row = hp.find_key_row(wksht, 'A', 1, act_key)
+    key_row = hp.find_key_row(wksht, 'A', 1, 
+                              key_values= act_key)
     
     # first data row to read
     start_row = 1 + key_row
     
-    # find the row with None, the extent of the data
+    # find the row with terminal key values, the extent of the data
     # move up from this row by amount = # row_no_update (hist data)
     # or 1 (proj data)
     # collect only the rows with new data
-    stop_row = hp.find_key_row(wksht, 'A', start_row)
+    stop_row = hp.find_key_row(wksht, 'A', start_row,
+                               key_values= end_key,
+                               is_stop_row= True)
     len_ = len(rows_no_update)
     bool_v = len_ > 0
+    # adjust stop row for # rows not to update
+    # if len_ > 0: subtract len_ from stop_row #
+    # if len == 0: subtract 1 from stop_row #
     stop_row -= len_ * bool_v + 1 * (1 - bool_v)  
 
     if (stop_row < start_row):
@@ -168,7 +178,7 @@ def margin_loader(wksht, dates_no_update,
     
     # find the rows with dates and data
     # start row contains dates
-    start_row = hp.find_key_row(wksht, 'A', 1, [row_key])
+    start_row = hp.find_key_row(wksht, 'A', 1, key_values= [row_key])
     stop_row = start_row + stop_row_data_offset
     
     # fetch block of data from columns
@@ -241,23 +251,21 @@ def industry_loader(wksht, years_no_update,
                         
 ## +++++  read data  +++++
     # search the first row of data
-    # find col number for first_col with data:
     # 2nd block, bracketed by default key None
     # read the last three years of data
-    first_col_num = hp.find_key_col(wksht, first_row_op + 2,
-                                1, start_col_key)\
-                     -1 + (2 * len(years_no_update) )
-    if first_col_num < 1:
-        print('\n============================================')
-        print('In industry_loader:')
-        print(f'first_col_num {first_col_num} is less than 1')
-        print('============================================\n')
-        sys.exit()
-        
+    
+    # key value is None (col before 1st number to read)
+    first_col_num = 1 + hp.find_key_col(wksht, first_row_op + 2,
+                                        start_col= 3)
+    # skip years not to update
+    first_col_num += 2 * len(years_no_update)\
+    
     first_col = ut_cell.get_column_letter(first_col_num)
     
-    last_col_num = hp.find_key_col(wksht, first_row_op + 2, 
-                               first_col_num, stop_col_key) - 1
+    # key_value is None
+    last_col_num = -1 + hp.find_key_col(wksht, first_row_op + 2, 
+                                        start_col= first_col_num)
+    
     last_col = ut_cell.get_column_letter(last_col_num)
    
 ## op data
@@ -266,7 +274,9 @@ def industry_loader(wksht, years_no_update,
     data = data_block_reader(wksht, first_row_op, last_row_op,
                              first_col, last_col)
     
-    date_data_names = data[0]
+    date_data_names = [f'{name[:4]} {name[-3:]}'
+                       for name in data[0]]
+    
     columns_pe = [col
                   for col in date_data_names
                   if 'P/E' in col]

@@ -1,6 +1,6 @@
 # S&P500 earnings yield and 10-year TIPS rate
 #### initiated:  2023 08
-#### current version:  2025 02 01
+#### current version:  See pyproject.toml
 ### Uses current and historical data
 - index of stock prices for the S&P500
 - operating and reported earnings for the S&P500

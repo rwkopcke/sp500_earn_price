@@ -1,7 +1,6 @@
 .venv
 *.DS_Store
 */.DS_Store
-*.parquet
 __pycache__/
 *.py[oc]
 build/

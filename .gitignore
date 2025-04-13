@@ -1,8 +1,6 @@
 .venv
-*.DS_Store
-*/.DS_Store
-__pycache__/
-*.py[oc]
+**/.DS_Store
+**/__pycache__
 build/
 dist/
 wheels/

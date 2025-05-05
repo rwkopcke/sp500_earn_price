@@ -42,10 +42,12 @@ def fwd_12m_ern(name, p_df):
 def page0_df(df, p_dict, p_dict_columns, name_act):
     '''
         return df with data to be plotted on page 0
+        input df has actual earn (history)
+        input p_dict has projections
     '''
     
-    # create 2cols 
-    #   actual_op and actual_rep 12m eps for each yr,
+    # create hf with 2cols 
+    #   yr_qtr and actual 12m eps
     #   which appears only in the 4th qtr, otherwise null
     hf = df.select(pl.col(name_act),
                    pl.col('yr_qtr'))\
@@ -58,19 +60,11 @@ def page0_df(df, p_dict, p_dict_columns, name_act):
                 .select(pl.col(name_act),
                         pl.col('yr_qtr'))
 
-    # for each yr_qtr in df, fetch its proj_df from p_dict
-    # filter to select 12m proj in Q4s
+    # for each yr_qtr in df (hf), fetch its proj_df from p_dict
+    # filter to select 12m proj for future Q4s
     # join with df on yr_qtr
-    
-    '''
-    hp.my_df_print(df)
-    print(p_dict.keys())
-    hp.my_df_print(p_dict['2025-Q1'])
-    
-    sys.exit()
-    '''
-    
-    # name of the col of e from proj from list: op or rep?
+
+    df = df.sort(by='yr_qtr')
     for idx, yrqtr in enumerate(df['yr_qtr']):
         # target yr_qtr, place in col for filtered pro_df
         
@@ -84,6 +78,8 @@ def page0_df(df, p_dict, p_dict_columns, name_act):
             print('========================================================================\n')
             sys.exit()
         
+        # use only full year projections (in 12-m for Q4) and
+        # Q4s for years >= year of current projection date (yrqtr)
         pro_df = p_dict[yrqtr]\
                     .select(p_dict_columns)\
                     .filter(pl.col('yr_qtr')
@@ -91,11 +87,8 @@ def page0_df(df, p_dict, p_dict_columns, name_act):
                     .with_columns(pl.col('yr_qtr')
                                       .map_batches(hp.yrqtr_to_yr)
                                       .alias('year'),
-                                  pl.lit(yrqtr).alias('yr_qtr'))
-                    
-        # remove any projections for previous year from Q1
-        if yrqtr[-2:] == 'Q1':
-            pro_df = pro_df.filter(pl.col('year')>= yrqtr[0:4])
+                                  pl.lit(yrqtr).alias('yr_qtr'))\
+                    .filter((pl.col('year') >= yrqtr[:4]))
         
         # accumulate rows for the projection DF for each yr_qtr  
         if idx == 0:
@@ -106,9 +99,10 @@ def page0_df(df, p_dict, p_dict_columns, name_act):
     
     # pivot years into column names for each yr_qtr
     p_df = p_df.pivot(index= 'yr_qtr',
-                      columns= 'year')
+                      columns= 'year')\
+               .sort(by= 'yr_qtr')\
     
-    # build DF to return for plotting
+    # build DF with data to plot
     p_df = hf.select(['yr_qtr', 
                       name_act])\
              .join(p_df,

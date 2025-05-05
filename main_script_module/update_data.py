@@ -341,18 +341,16 @@ def update():
             
     # add dates of projections and year_qtr to record_dict
     if record_dict['prev_used_files']:
-        record_dict['prev_used_files'] = \
-            list(set(record_dict['prev_used_files']) -
-                 set(files_to_read_list))
+        record_dict['prev_used_files'].extend(files_to_read_list)
     else:
         record_dict['prev_used_files'] = files_to_read_list
     
     record_dict['prev_used_files'].sort(reverse= True)
         
-    record_dict['proj_yr_qtrs'] = \
-        sorted(hp.date_to_year_qtr(
-            hp.string_to_date(record_dict['prev_used_files']))\
-                   .to_list(), reverse= True)
+    record_dict['proj_yr_qtrs'] = sorted(
+            hp.date_to_year_qtr(
+                hp.string_to_date(record_dict['prev_used_files'])), 
+            reverse= True)
 
 ## +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++              
 ## +++++  fetch the historical data  +++++++++++++++++++++++++++++++++++++++
@@ -572,25 +570,6 @@ def update():
             f'{name_date.year}-Q{(int(name_date.month) - 1) // 3 + 1}'
             
         add_proj_yr_qtrs_list.append(year_quarter)
-        
-############
-        # FOR DEBUGGING -- run program, with the value True
-        # True allows inspection of dfs & aborts writing new files
-        # If reusing a file that was read previously, use the most recent file
-        # remove the file from four entries in record_dict
-        # change the name of the most recent file's parquet to 
-        # to the name for the second-most recent file's parquet
-        '''
-        CONTINUE_PROCESS = input('\nTo write new data files\n' +
-                             'and continue processing, type the word Continue: ')
-
-        if CONTINUE_PROCESS not in ['continue', 'Continue']:
-            print('\n============================================')
-            print('Continue process is not selected:')
-            print('No data files have been written.')
-            print('============================================\n')
-        '''
-############
 
 ## +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 ## +++++ write files +++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -601,11 +580,15 @@ def update():
             f'{PREFIX_OUTPUT_FILE_NAME} {name_date}{EXT_OUTPUT_FILE_NAME}'
         record_dict['output_proj_files'].append(output_file_name)
         output_file_address = sp.OUTPUT_PROJ_DIR / output_file_name
+        
+        print(year_quarter)
         print(f'output file: {output_file_name}')
+        print(proj_df['yr_qtr'].to_list())
+        print()
         
         with output_file_address.open('w') as f:
             proj_df.write_parquet(f)
-            
+    '''
 ## update RECORD
     proj_list = record_dict['proj_yr_qtrs']
     if proj_list:
@@ -613,6 +596,7 @@ def update():
     else:
         proj_list = [year_quarter]
     record_dict['proj_yr_qtrs'] = sorted(proj_list, reverse= True)
+    '''
             
 ## +++++ write history file ++++++++++++++++++++++++++++++++++++++++++++
     # move any existing hist file in output_dir to backup

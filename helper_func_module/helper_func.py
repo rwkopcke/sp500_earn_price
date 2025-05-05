@@ -13,14 +13,15 @@ import openpyxl.utils.cell as ut_cell
 import polars as pl
 
 
-def my_df_print(df):
+def my_df_print(df, n_rows=30):
     '''
         custom print df function to format data
     '''                                
     with pl.Config(
         tbl_cell_numeric_alignment="RIGHT",
         thousands_separator=",",
-        float_precision=1
+        float_precision=1,
+        tbl_rows = n_rows
     ):
         print(df)
     return

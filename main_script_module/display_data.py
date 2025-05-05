@@ -92,9 +92,6 @@ def display():
                                       columns= HIST_COL_NAMES)\
                         .filter(pl.col('yr_qtr')
                                   .is_in(record_dict['proj_yr_qtrs']))
-                        
-            #pl.col("yr_qtr").is_in('proj_yr_qtrs'.replace_strict(record_dict))
-            #pl.col('yr_qtr').map_elements(lambda x: x in record_dict['proj_yr_qtrs']
             
         print('\n============================================')
         print(f'Read data history from: \n{sp.OUTPUT_HIST_ADDR}')
@@ -116,19 +113,24 @@ def display():
         if file_addr.exists():
             with file_addr.open('r') as f:
                 proj_dict[yr_qtr] = pl.read_parquet(f)
+            print(list(proj_dict.keys()))
+            print('\n============================================')
+            print(f'Read output projection file for {yr_qtr}' )
+            print(f'at \n{file_addr.name}')
+            print(f'in: \n{file_addr}')
+            print('============================================\n')
         else:
             print('\n============================================')
             print(f'No output file at \n{file_addr.name}')
             print(f'in: \n{file_addr}')
             print('Processing ended')
             print('============================================\n')
+            sys.exit()
 
 # DISPLAY THE DATA ====================================================
     # https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.subplot_mosaic.html
     # https://matplotlib.org/stable/api/axes_api.html
     # https://matplotlib.org/stable/api/axes_api.html#axes-position
-
-# +++++ create the y-values (columns) for the series to be plotted
 
 # page zero  ======================
 # shows:  projected eps for current cy and future cy

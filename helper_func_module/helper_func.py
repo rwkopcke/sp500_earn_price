@@ -65,7 +65,7 @@ def date_to_year_qtr(series):
         Returns year_qtr string, yyyy-Qq, as pl.Series
     '''
     return pl.Series([f"{date.year}-Q{date_to_qtr(date)}"
-            for date in series])
+                     for date in series])
     
     
 def date_to_qtr(date):

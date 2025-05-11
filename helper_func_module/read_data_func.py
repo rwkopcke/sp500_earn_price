@@ -345,6 +345,14 @@ def fred_reader(wksht, first_row, col_1, col_2,
     data = data_block_reader(wksht, first_row, last_row,
                              col_1, col_2)
     
+    if data[-1:][0][0] is None:
+        print('\n================================================')
+        print('In fred_reader:')
+        print(f'"none" appears in the input data')
+        print(f'last row is {data[-1]}')
+        print('================================================\n')
+        sys.exit()
+    
     df = pl.DataFrame(data, schema=['date', rr_col_name],
                       orient='row')\
            .with_columns(pl.col('date')

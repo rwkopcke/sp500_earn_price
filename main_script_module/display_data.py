@@ -8,38 +8,41 @@
 
 
 #=================  Global Parameters  ================================
+from dataclasses import dataclass
 
-# main titles for displays
-PAGE0_SUPTITLE = " \nPrice-Earnings Ratios for the S&P 500"
-PROJ_EPS_SUPTITLE = " \nCalendar-Year Earnings per Share for the S&P 500"
-PAGE2_SUPTITLE = " \nEarnings Margin and Equity Premium for the S&P 500"
-PAGE3_SUPTITLE = \
-    " \nS&P 500 Forward Earnings Yield, 10-Year TIPS Rate, and Equity Premium"
+@dataclass(frozen= True)
+class Fixed_values_addresses:
+    # main titles for displays
+    PAGE0_SUPTITLE = " \nPrice-Earnings Ratios for the S&P 500"
+    PROJ_EPS_SUPTITLE = " \nCalendar-Year Earnings per Share for the S&P 500"
+    PAGE2_SUPTITLE = " \nEarnings Margin and Equity Premium for the S&P 500"
+    PAGE3_SUPTITLE = \
+        " \nS&P 500 Forward Earnings Yield, 10-Year TIPS Rate, and Equity Premium"
 
-# str: source footnotes for displays
-E_DATA_SOURCE = \
-    'https://www.spglobal.com/spdji/en/search/?query=index+earnings&activeTab=all'
-RR_DATA_SOURCE = '10-year TIPS: latest rate for each quarter,' + \
-    ' Board of Governors of the Federal Reserve System, ' + \
-    '\nMarket Yield on U.S. Treasury Securities at 10-Year' + \
-    ' Constant Maturity, Investment Basis, Inflation-Indexed,' +\
-    '\nfrom Federal Reserve Bank of St. Louis, FRED [DFII10].'
-PAGE0_SOURCE = E_DATA_SOURCE
-PAGE1_SOURCE = E_DATA_SOURCE
-PAGE2_SOURCE = E_DATA_SOURCE + '\n\n' + RR_DATA_SOURCE
-PAGE3_SOURCE = E_DATA_SOURCE + '\n\n' + RR_DATA_SOURCE
+    # str: source footnotes for displays
+    E_DATA_SOURCE = \
+        'https://www.spglobal.com/spdji/en/search/?query=index+earnings&activeTab=all'
+    RR_DATA_SOURCE = '10-year TIPS: latest rate for each quarter,' + \
+        ' Board of Governors of the Federal Reserve System, ' + \
+        '\nMarket Yield on U.S. Treasury Securities at 10-Year' + \
+        ' Constant Maturity, Investment Basis, Inflation-Indexed,' +\
+        '\nfrom Federal Reserve Bank of St. Louis, FRED [DFII10].'
+    PAGE0_SOURCE = E_DATA_SOURCE
+    PAGE1_SOURCE = E_DATA_SOURCE
+    PAGE2_SOURCE = E_DATA_SOURCE + '\n\n' + RR_DATA_SOURCE
+    PAGE3_SOURCE = E_DATA_SOURCE + '\n\n' + RR_DATA_SOURCE
 
-# hyopothetical quarterly growth factor future stock prices
-ROG = .05
-ROG_AR = int(ROG * 100)
-ROGQ = (1. + ROG) ** (1/4)
+    # hyopothetical quarterly growth factor future stock prices
+    ROG = .05
+    ROG_AR = int(ROG * 100)
+    ROGQ = (1. + ROG) ** (1/4)
 
-HIST_COL_NAMES = ['date', 'yr_qtr', 'price', 'op_eps', 'rep_eps',
-                'op_p/e', 'rep_p/e', '12m_op_eps', '12m_rep_eps',
-                'op_margin', 'real_int_rate']
+    HIST_COL_NAMES = ['date', 'yr_qtr', 'price', 'op_eps', 'rep_eps',
+                    'op_p/e', 'rep_p/e', '12m_op_eps', '12m_rep_eps',
+                    'op_margin', 'real_int_rate']
 
-DATA_COLS_RENAME  = {'op_margin': 'margin',
-                    'real_int_rate': 'real_rate'}
+    DATA_COLS_RENAME  = {'op_margin': 'margin',
+                        'real_int_rate': 'real_rate'}
 
 
 # ================  MAIN =============================================+
@@ -65,17 +68,19 @@ def display():
     from helper_func_module import display_helper_func as dh
     from helper_func_module import helper_func as hp
     
+    fixed = Fixed_values_addresses()
+    
 # read record_dict
-    if sp.RECORD_DICT_ADDR.exists():
-        with sp.RECORD_DICT_ADDR.open('r') as f:
+    if sp.path.RECORD_DICT_ADDR.exists():
+        with sp.path.RECORD_DICT_ADDR.open('r') as f:
             record_dict = json.load(f)
         print('\n============================================')
-        print(f'Read record_dict from: \n{sp.RECORD_DICT_ADDR}')
+        print(f'Read record_dict from: \n{sp.path.RECORD_DICT_ADDR}')
         print('============================================\n')
     else:
         print('\n============================================')
-        print(f'No record_dict in \n{sp.RECORD_DICT_ADDR.name}')
-        print(f'at: \n{sp.RECORD_DICT_ADDR}')
+        print(f'No record_dict in \n{sp.path.RECORD_DICT_ADDR.name}')
+        print(f'at: \n{sp.path.RECORD_DICT_ADDR}')
         print('Processing ended')
         print('============================================\n')
         sys.exit()
@@ -86,20 +91,20 @@ def display():
     yr_qtr_current_projn = record_dict["proj_yr_qtrs"][0]
     
  # read hist_df
-    if sp.OUTPUT_HIST_ADDR.exists():
-        with sp.OUTPUT_HIST_ADDR.open('r') as f:
+    if sp.path.OUTPUT_HIST_ADDR.exists():
+        with sp.path.OUTPUT_HIST_ADDR.open('r') as f:
             data_df = pl.read_parquet(source= f,
-                                      columns= HIST_COL_NAMES)\
+                                      columns= fixed.HIST_COL_NAMES)\
                         .filter(pl.col('yr_qtr')
                                   .is_in(record_dict['proj_yr_qtrs']))
             
         print('\n============================================')
-        print(f'Read data history from: \n{sp.OUTPUT_HIST_ADDR}')
+        print(f'Read data history from: \n{sp.path.OUTPUT_HIST_ADDR}')
         print('============================================\n')
     else:
         print('\n============================================')
-        print(f'No data history in: \n{sp.OUTPUT_HIST_ADDR.name}')
-        print(f'at: \n{sp.OUTPUT_HIST_ADDR}')
+        print(f'No data history in: \n{sp.path.OUTPUT_HIST_ADDR.name}')
+        print(f'at: \n{sp.path.OUTPUT_HIST_ADDR}')
         print('Processing ended')
         print('============================================\n')
         sys.exit()
@@ -109,7 +114,7 @@ def display():
     proj_dict = dict()
     for file_name, yr_qtr in zip(record_dict['output_proj_files'],
                                  record_dict['proj_yr_qtrs']):
-        file_addr = sp.OUTPUT_PROJ_DIR / file_name
+        file_addr = sp.path.OUTPUT_PROJ_DIR / file_name
         if file_addr.exists():
             with file_addr.open('r') as f:
                 proj_dict[yr_qtr] = pl.read_parquet(f)
@@ -144,10 +149,10 @@ def display():
     ax = fig.subplot_mosaic([['operating'],
                              ['reported']])
     fig.suptitle(
-        f'{PROJ_EPS_SUPTITLE}\n{date_this_projn}',
+        f'{fixed.PROJ_EPS_SUPTITLE}\n{date_this_projn}',
         fontsize=13,
         fontweight='bold')
-    fig.supxlabel(PAGE0_SOURCE, fontsize= 8)
+    fig.supxlabel(fixed.PAGE0_SOURCE, fontsize= 8)
 
     # subsets of columns for op eps (top panel)
     df = data_df.select(['yr_qtr', '12m_op_eps'])
@@ -182,9 +187,9 @@ def display():
     
     # show the figure
     print('\n============================')
-    print(sp.DISPLAY_0_ADDR)
+    print(sp.path.DISPLAY_0_ADDR)
     print('============================\n')
-    fig.savefig(str(sp.DISPLAY_0_ADDR))
+    fig.savefig(str(sp.path.DISPLAY_0_ADDR))
     
     del df
     gc.collect()
@@ -200,10 +205,10 @@ def display():
     ax = fig.subplot_mosaic([['operating'],
                              ['reported']])
     fig.suptitle(
-        f'{PAGE0_SUPTITLE}\n{date_this_projn}\n ',
+        f'{fixed.PAGE0_SUPTITLE}\n{date_this_projn}\n ',
         fontsize=13,
         fontweight='bold')
-    fig.supxlabel(PAGE1_SOURCE, fontsize= 8)
+    fig.supxlabel(fixed.PAGE1_SOURCE, fontsize= 8)
     
     # create the top and bottom graphs for op and rep pe
     # new DF with cols for p/e and alt p/e, both using 12m trailing E
@@ -220,11 +225,11 @@ def display():
     p_df = proj_dict[yr_qtr_current_projn]\
                 .select(['yr_qtr', '12m_op_eps'])
     
-    df = dh.page1_df(df, p_df, '12m_op_eps', ROGQ )
+    df = dh.page1_df(df, p_df, '12m_op_eps', fixed.ROGQ )
     
     denom = 'divided by projected earnings'
     legend1 = f'price (constant after {date_this_projn})\n{denom}'
-    legend2 = f'price (increases {ROG_AR}% ar after {date_this_projn})\n{denom}'
+    legend2 = f'price (increases {fixed.ROG_AR}% ar after {date_this_projn})\n{denom}'
     
     df = df.rename({'pe': 'historical',
                'fix_proj_p/e': legend1,
@@ -244,7 +249,7 @@ def display():
     p_df = proj_dict[yr_qtr_current_projn]\
                .select(['yr_qtr', '12m_rep_eps'])
     
-    df = dh.page1_df(df, p_df, '12m_rep_eps', ROGQ )
+    df = dh.page1_df(df, p_df, '12m_rep_eps', fixed.ROGQ )
     
     df = df.rename({'pe': 'historical',
                     'fix_proj_p/e': legend1,
@@ -259,9 +264,9 @@ def display():
                     xlabl= ' \n')
     
     print('\n============================')
-    print(sp.DISPLAY_1_ADDR)
+    print(sp.path.DISPLAY_1_ADDR)
     print('============================\n')
-    fig.savefig(str(sp.DISPLAY_1_ADDR))
+    fig.savefig(str(sp.path.DISPLAY_1_ADDR))
     
     del df
     gc.collect()
@@ -278,10 +283,10 @@ def display():
                              ['quality'],
                              ['premium']])
     fig.suptitle(
-        f'{PAGE2_SUPTITLE}\n{date_this_projn}\n',
+        f'{fixed.PAGE2_SUPTITLE}\n{date_this_projn}\n',
         fontsize=13,
         fontweight='bold')
-    fig.supxlabel(PAGE2_SOURCE, fontsize= 8)
+    fig.supxlabel(fixed.PAGE2_SOURCE, fontsize= 8)
     
     # create the top and bottom graphs for margins and premiums
     # create working df for op margins (top panel)
@@ -344,9 +349,9 @@ def display():
                     hrzntl_vals= [2.0, 4.0])
     
     print('\n============================')
-    print(sp.DISPLAY_2_ADDR)
+    print(sp.path.DISPLAY_2_ADDR)
     print('============================\n')
-    fig.savefig(str(sp.DISPLAY_2_ADDR))
+    fig.savefig(str(sp.path.DISPLAY_2_ADDR))
     #plt.savefig(f'{output_dir}/eps_page2.pdf', bbox_inches='tight')
     
     del df
@@ -363,10 +368,10 @@ def display():
     ax = fig.subplot_mosaic([['operating'],
                              ['reported']])
     fig.suptitle(
-        f'{PAGE3_SUPTITLE}\n{date_this_projn}\n',
+        f'{fixed.PAGE3_SUPTITLE}\n{date_this_projn}\n',
         fontsize=13,
         fontweight='bold')
-    fig.supxlabel(PAGE3_SOURCE, fontsize= 8)
+    fig.supxlabel(fixed.PAGE3_SOURCE, fontsize= 8)
     
     xlabl = '\nquarter of projection, price, and TIPS rate\n\n'
     ylabl = ' \npercent\n '
@@ -414,9 +419,9 @@ def display():
                 hrzntl_vals= [2.0, 4.0])
     
     print('\n============================')
-    print(sp.DISPLAY_3_ADDR)
+    print(sp.path.DISPLAY_3_ADDR)
     print('============================\n')
-    fig.savefig(str(sp.DISPLAY_3_ADDR))
+    fig.savefig(str(sp.path.DISPLAY_3_ADDR))
     #plt.savefig(f'{output_dir}/eps_page3.pdf', bbox_inches='tight')
     
     del df

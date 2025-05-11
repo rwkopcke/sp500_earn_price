@@ -1,30 +1,35 @@
 
 #=================  Global Parameters  ================================
+from dataclasses import dataclass
 
-# main titles for displays
-PAGE4_SUPTITLE = "\nOperating Price-Earnings Ratios for " +\
-    "the Industries Within the S&P 500"
-PAGE5_SUPTITLE = "\nCorrelations among Annual Price-Earnings Ratios \nfor " +\
-    "the Industries Within the S&P 500"
-PAGE6_SUPTITLE = "\nEach Industry's Share of Total Earnings for the Industries in the S&P 500"
+@dataclass(frozen= True)
+class Fixed_values:
+    # main titles for displays
+    PAGE4_SUPTITLE = "\nOperating Price-Earnings Ratios for " +\
+        "the Industries Within the S&P 500"
+    PAGE5_SUPTITLE = \
+        "\nCorrelations among Annual Price-Earnings Ratios \nfor " +\
+        "the Industries Within the S&P 500"
+    PAGE6_SUPTITLE = \
+        "\nEach Industry's Share of Total Earnings for the Industries in the S&P 500"
 
-# str: source footnotes for displays
-E_DATA_SOURCE = \
-    'https://www.spglobal.com/spdji/en/search/?query=index+earnings&activeTab=all'
-RR_DATA_SOURCE = '10-year TIPS: latest rate for each quarter,' + \
-    ' Board of Governors of the Federal Reserve System, ' + \
-    '\nMarket Yield on U.S. Treasury Securities at 10-Year' + \
-    ' Constant Maturity, Investment Basis, Inflation-Indexed,' +\
-    '\nfrom Federal Reserve Bank of St. Louis, FRED [DFII10].\n '
-PAGE4_SOURCE = '\n' + E_DATA_SOURCE + '\n' +\
-    "NB: S&P calculates the index of earnings for the S&P 500 " +\
-    "differently than earnings for the industries.\n" +\
-    "The index of earnings for the S&P 500 usually is more than twice the sum of " +\
-    "earnings for the industries. The S&P 500's P/E is not the " +\
-    "average of the industries' P/Es.\n "
-PAGE5_SOURCE = '\n' + E_DATA_SOURCE
+    # str: source footnotes for displays
+    E_DATA_SOURCE = \
+        'https://www.spglobal.com/spdji/en/search/?query=index+earnings&activeTab=all'
+    RR_DATA_SOURCE = '10-year TIPS: latest rate for each quarter,' + \
+        ' Board of Governors of the Federal Reserve System, ' + \
+        '\nMarket Yield on U.S. Treasury Securities at 10-Year' + \
+        ' Constant Maturity, Investment Basis, Inflation-Indexed,' +\
+        '\nfrom Federal Reserve Bank of St. Louis, FRED [DFII10].\n '
+    PAGE4_SOURCE = '\n' + E_DATA_SOURCE + '\n' +\
+        "NB: S&P calculates the index of earnings for the S&P 500 " +\
+        "differently than earnings for the industries.\n" +\
+        "The index of earnings for the S&P 500 usually is more than twice the sum of " +\
+        "earnings for the industries. The S&P 500's P/E is not the " +\
+        "average of the industries' P/Es.\n "
+    PAGE5_SOURCE = '\n' + E_DATA_SOURCE
 
-XLABL = 'end of year'
+    XLABL = 'end of year'
 
 # ================  MAIN ==============================================
 
@@ -46,11 +51,13 @@ def display_ind():
     #from helper_func_module import display_ind_helper_func as dh
     from helper_func_module import plot_ind_func as pf
     from helper_func_module import helper_func as hp
+    
+    fixed = Fixed_values()
 
 # FETCH DATA +++++++++++++++++++++++++++++++++++++++++++++++++++++++
     # find latest year for actual data
     # do not use only p/e data, 'real_rate' data, eps data
-    ind_df = pl.read_parquet(sp.OUTPUT_IND_ADDR)\
+    ind_df = pl.read_parquet(sp.path.OUTPUT_IND_ADDR)\
                .drop(cs.matches('Real_Estate'))\
                .sort(by= 'year')
                
@@ -143,10 +150,10 @@ def display_ind():
     # plt.tight_layout(pad= 0.5)
     
     fig.suptitle(
-        '\n' + PAGE4_SUPTITLE,
+        '\n' + fixed.PAGE4_SUPTITLE,
         fontsize=13,
         fontweight='bold')
-    fig.supxlabel(f'{PAGE4_SOURCE}\n ', fontsize= 8)
+    fig.supxlabel(f'{fixed.PAGE4_SOURCE}\n ', fontsize= 8)
     
     ax = fig.subplots()
     
@@ -166,7 +173,7 @@ def display_ind():
 )
     plt.xticks(rotation = 30)
     ax.set_ylim(ymin= -50, ymax= 60)
-    ax.set_xlabel(XLABL, fontweight= 'bold')
+    ax.set_xlabel(fixed.XLABL, fontweight= 'bold')
     ax.set_ylabel(' \nprice-earnings ratio', fontweight= 'bold')
     sn.move_legend(ax, 'lower left')
     box = ax.get_position()
@@ -177,9 +184,9 @@ def display_ind():
     # sn.move_legend(ax, 'upper left', bbox_to_anchor= (1, 1))
     
     print('\n============================')
-    print(sp.DISPLAY_4_ADDR)
+    print(sp.path.DISPLAY_4_ADDR)
     print('============================\n')
-    fig.savefig(str(sp.DISPLAY_4_ADDR))
+    fig.savefig(str(sp.path.DISPLAY_4_ADDR))
     
     del fig
     del df
@@ -221,7 +228,7 @@ def display_ind():
     cg.figure.subplots_adjust(top=0.87)
     
     cg.figure.suptitle(
-        f' \n{PAGE5_SUPTITLE}',
+        f' \n{fixed.PAGE5_SUPTITLE}',
         fontsize=13,
         fontweight='bold')
     # plt.tight_layout(pad= 0.5)
@@ -269,9 +276,9 @@ def display_ind():
     '''
     
     print('\n============================')
-    print(sp.DISPLAY_5_ADDR)
+    print(sp.path.DISPLAY_5_ADDR)
     print('============================\n')
-    cg.savefig(str(sp.DISPLAY_5_ADDR))
+    cg.savefig(str(sp.path.DISPLAY_5_ADDR))
     
     del op_e_cor_df
     del cg
@@ -296,10 +303,10 @@ def display_ind():
     # one plot
     ax = fig.subplots()
     fig.suptitle(
-        '\n' + PAGE6_SUPTITLE,
+        '\n' + fixed.PAGE6_SUPTITLE,
         fontsize= 13,
         fontweight= 'bold')
-    fig.supxlabel(PAGE4_SOURCE, fontsize= 8)
+    fig.supxlabel(fixed.PAGE4_SOURCE, fontsize= 8)
     
     
     # remove pe data, simplify column names
@@ -350,9 +357,9 @@ def display_ind():
               reverse= True)
     
     print('\n============================')
-    print(sp.DISPLAY_6_ADDR)
+    print(sp.path.DISPLAY_6_ADDR)
     print('============================\n')
-    fig.savefig(str(sp.DISPLAY_6_ADDR))
+    fig.savefig(str(sp.path.DISPLAY_6_ADDR))
 
     return
     

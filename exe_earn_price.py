@@ -1,4 +1,8 @@
 def main():
+    '''
+        Calls the three main scripts that produce this
+        project's data and displays
+    '''
     
     action_dict = {
         "0": 'Update data from recent S&P and FRED workbooks',
@@ -29,7 +33,7 @@ def main():
                 print(f'{action} is not a valid key')
                 
         choice = input(
-            'To take another action, type T; otherwise, type F: ')
+            '\nTo take another action, type T; otherwise, type F: ')
         if choice not in ['T', 't', 'True', 'Y', 'y', 'yes']:
             break
 

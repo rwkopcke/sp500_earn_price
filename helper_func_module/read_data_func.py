@@ -5,7 +5,6 @@
    access these values in other modules by
         import sp500_pe.read_data_func as rd
 '''
-
 import sys
 
 from openpyxl import load_workbook
@@ -14,6 +13,7 @@ import polars as pl
 import polars.selectors as cs
 
 from helper_func_module import helper_func as hp
+
 
 def read_sp_date(wksht,
                  date_keys, value_col_1, 

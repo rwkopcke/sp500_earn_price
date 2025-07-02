@@ -1,6 +1,16 @@
 
 #=================  Global Parameters  ================================
 from dataclasses import dataclass
+import gc
+
+import polars as pl
+import polars.selectors as cs
+import matplotlib.pyplot as plt
+import seaborn as sn
+import numpy as np
+
+from main_script_module import sp_paths as sp
+from helper_func_module import display_ind_data_read_df
 
 @dataclass(frozen= True)
 class Fixed_values:
@@ -35,59 +45,15 @@ class Fixed_values:
 
 def display_ind():
     
-    import sys
-    import gc
-
-    import polars as pl
-    import polars.selectors as cs
-    import matplotlib.pyplot as plt
-    import seaborn as sn
-    import pyarrow
-    import scipy
-    import numpy as np
-
-    from main_script_module import sp_paths as sp
-
-    #from helper_func_module import display_ind_helper_func as dh
-    from helper_func_module import plot_ind_func as pf
-    from helper_func_module import helper_func as hp
-    
     fixed = Fixed_values()
+    env = sp.params
+    
+## ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+## ++++++ Read Industry data ++++++++++++++++++++++++++++++++++++++++++
+## ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-# FETCH DATA +++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    # find latest year for actual data
-    # do not use only p/e data, 'real_rate' data, eps data
-    ind_df = pl.read_parquet(sp.path.OUTPUT_IND_ADDR)\
-               .drop(cs.matches('Real_Estate'))\
-               .sort(by= 'year')
-               
-    year = pl.Series(
-              ind_df.select("year", 'SP500_rep_eps')\
-                    .filter(pl.col('SP500_rep_eps')
-                            .is_not_null())\
-                    .select('year').max()
-              ).to_list()[0]
-    
-    DATE_THIS_PROJECTION = \
-        f'\nactual annual operating earnings through {year}'
-    
-    # marks years with E, remove reported earnings
-    ind_df = ind_df.with_columns(
-                        pl.when(pl.col('SP500_rep_eps')
-                                .is_not_null())
-                          .then(pl.col('year'))
-                          .otherwise(pl.col('year') + 'E')
-                          .alias('year')
-                        )\
-                    .select(~cs.matches('_rep_'))
-        
-    # remove eps, simplify col headings
-    op_e_df = ind_df.drop(cs.matches('_eps'))
-    op_e_df.columns = [name.split('_op_')[0].replace("_", " ")
-                       for name in op_e_df.columns]
-    # rep_e_df = ind_df.select(~(cs.matches('_op_')))
-    # rep_e_df.columns = [name.split('_op_')[0].replace("_", " ")
-    #                     for name in op_e_cor_df.columns]
+    ind_df, op_e_df, year, DATE_THIS_PROJECTION = \
+        display_ind_data_read_df.read(env, fixed)
     
     '''
 # SCATTER PLOTS ++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -184,9 +150,9 @@ def display_ind():
     # sn.move_legend(ax, 'upper left', bbox_to_anchor= (1, 1))
     
     print('\n============================')
-    print(sp.path.DISPLAY_4_ADDR)
+    print(env.DISPLAY_4_ADDR)
     print('============================\n')
-    fig.savefig(str(sp.path.DISPLAY_4_ADDR))
+    fig.savefig(str(env.DISPLAY_4_ADDR))
     
     del fig
     del df
@@ -276,9 +242,9 @@ def display_ind():
     '''
     
     print('\n============================')
-    print(sp.path.DISPLAY_5_ADDR)
+    print(env.DISPLAY_5_ADDR)
     print('============================\n')
-    cg.savefig(str(sp.path.DISPLAY_5_ADDR))
+    cg.savefig(str(env.DISPLAY_5_ADDR))
     
     del op_e_cor_df
     del cg
@@ -357,9 +323,9 @@ def display_ind():
               reverse= True)
     
     print('\n============================')
-    print(sp.path.DISPLAY_6_ADDR)
+    print(env.DISPLAY_6_ADDR)
     print('============================\n')
-    fig.savefig(str(sp.path.DISPLAY_6_ADDR))
+    fig.savefig(str(env.DISPLAY_6_ADDR))
 
     return
     

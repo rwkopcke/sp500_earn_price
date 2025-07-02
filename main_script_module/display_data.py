@@ -6,6 +6,18 @@
    paths.py script
 '''
 
+import gc
+
+import polars as pl
+import matplotlib.pyplot as plt
+
+from main_script_module import sp_paths as sp
+from helper_func_module import plot_func as pf
+from helper_func_module import display_helper_func as dh
+from helper_func_module import display_read_record_dict
+from helper_func_module import display_read_history
+from helper_func_module import display_read_proj_dict
+
 
 #=================  Global Parameters  ================================
 from dataclasses import dataclass
@@ -56,83 +68,25 @@ class Fixed_values_addresses:
 
 def display():
     
-    import sys
-    import gc
-
-    import polars as pl
-    import json
-    import matplotlib.pyplot as plt
-
-    from main_script_module import sp_paths as sp
-    from helper_func_module import plot_func as pf
-    from helper_func_module import display_helper_func as dh
-    from helper_func_module import helper_func as hp
-    
     fixed = Fixed_values_addresses()
+    env = sp.params
     
-# read record_dict
-    if sp.path.RECORD_DICT_ADDR.exists():
-        with sp.path.RECORD_DICT_ADDR.open('r') as f:
-            record_dict = json.load(f)
-        print('\n============================================')
-        print(f'Read record_dict from: \n{sp.path.RECORD_DICT_ADDR}')
-        print('============================================\n')
-    else:
-        print('\n============================================')
-        print(f'No record_dict in \n{sp.path.RECORD_DICT_ADDR.name}')
-        print(f'at: \n{sp.path.RECORD_DICT_ADDR}')
-        print('Processing ended')
-        print('============================================\n')
-        sys.exit()
+## ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+## +++++++++ Read record_dict, history, proj_dict +++++++++++++++++++++
+## ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    
+    record_dict, date_this_projn, yr_qtr_current_projn = \
+        display_read_record_dict.read(env)
+    
+    data_df, yr_qtr_set = \
+        display_read_history.read(record_dict, env, fixed)
+    
+    proj_dict, proj_dict_keys_set = \
+        display_read_proj_dict.read(record_dict, yr_qtr_set, env)
         
-    # provide the date of projection
-    
-    date_this_projn = record_dict['latest_used_file'].split('.')[0][-10:]
-    yr_qtr_current_projn = record_dict["proj_yr_qtrs"][0]
-    
- # read hist_df
-    if sp.path.OUTPUT_HIST_ADDR.exists():
-        with sp.path.OUTPUT_HIST_ADDR.open('r') as f:
-            data_df = pl.read_parquet(source= f,
-                                      columns= fixed.HIST_COL_NAMES)\
-                        .filter(pl.col('yr_qtr')
-                                  .is_in(record_dict['proj_yr_qtrs']))
-            
-        print('\n============================================')
-        print(f'Read data history from: \n{sp.path.OUTPUT_HIST_ADDR}')
-        print('============================================\n')
-    else:
-        print('\n============================================')
-        print(f'No data history in: \n{sp.path.OUTPUT_HIST_ADDR.name}')
-        print(f'at: \n{sp.path.OUTPUT_HIST_ADDR}')
-        print('Processing ended')
-        print('============================================\n')
-        sys.exit()
-    
-# +++++ read proj dfs +++++++++++++++++++++++++++++++++++++++++++++++++
-# put dfs in proj_dict, key = dfs' 'yr_qtr' value (from file.name)
-    proj_dict = dict()
-    for file_name, yr_qtr in zip(record_dict['output_proj_files'],
-                                 record_dict['proj_yr_qtrs']):
-        file_addr = sp.path.OUTPUT_PROJ_DIR / file_name
-        if file_addr.exists():
-            with file_addr.open('r') as f:
-                proj_dict[yr_qtr] = pl.read_parquet(f)
-            print(list(proj_dict.keys()))
-            print('\n============================================')
-            print(f'Read output projection file for {yr_qtr}' )
-            print(f'at \n{file_addr.name}')
-            print(f'in: \n{file_addr}')
-            print('============================================\n')
-        else:
-            print('\n============================================')
-            print(f'No output file at \n{file_addr.name}')
-            print(f'in: \n{file_addr}')
-            print('Processing ended')
-            print('============================================\n')
-            sys.exit()
-
-# DISPLAY THE DATA ====================================================
+## ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+## +++++++++ Display the data +++++++++++++++++++++++++++++++++++++++++
+## ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     # https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.subplot_mosaic.html
     # https://matplotlib.org/stable/api/axes_api.html
     # https://matplotlib.org/stable/api/axes_api.html#axes-position
@@ -141,6 +95,11 @@ def display():
 # shows:  projected eps for current cy and future cy
 # the projections shown for each quarter are the latest
 # made in the quarter
+
+    # proj_dict_keys: the dates for the data (x axis)
+    # data in data_df should conform
+    data_df = data_df.filter(pl.col("yr_qtr")
+                             .is_in(proj_dict_keys_set))
 
     # create graphs
     fig = plt.figure(figsize=(8.5, 11), 
@@ -155,6 +114,7 @@ def display():
     fig.supxlabel(fixed.PAGE0_SOURCE, fontsize= 8)
 
     # subsets of columns for op eps (top panel)
+    # use rows that match keys for proj_dict
     df = data_df.select(['yr_qtr', '12m_op_eps'])
     p_dict_columns = ['12m_op_eps', 'yr_qtr']
     
@@ -187,9 +147,9 @@ def display():
     
     # show the figure
     print('\n============================')
-    print(sp.path.DISPLAY_0_ADDR)
+    print(env.DISPLAY_0_ADDR)
     print('============================\n')
-    fig.savefig(str(sp.path.DISPLAY_0_ADDR))
+    fig.savefig(str(env.DISPLAY_0_ADDR))
     
     del df
     gc.collect()
@@ -264,9 +224,9 @@ def display():
                     xlabl= ' \n')
     
     print('\n============================')
-    print(sp.path.DISPLAY_1_ADDR)
+    print(env.DISPLAY_1_ADDR)
     print('============================\n')
-    fig.savefig(str(sp.path.DISPLAY_1_ADDR))
+    fig.savefig(str(env.DISPLAY_1_ADDR))
     
     del df
     gc.collect()
@@ -349,9 +309,9 @@ def display():
                     hrzntl_vals= [2.0, 4.0])
     
     print('\n============================')
-    print(sp.path.DISPLAY_2_ADDR)
+    print(env.DISPLAY_2_ADDR)
     print('============================\n')
-    fig.savefig(str(sp.path.DISPLAY_2_ADDR))
+    fig.savefig(str(env.DISPLAY_2_ADDR))
     #plt.savefig(f'{output_dir}/eps_page2.pdf', bbox_inches='tight')
     
     del df
@@ -419,11 +379,12 @@ def display():
                 hrzntl_vals= [2.0, 4.0])
     
     print('\n============================')
-    print(sp.path.DISPLAY_3_ADDR)
+    print(env.DISPLAY_3_ADDR)
     print('============================\n')
-    fig.savefig(str(sp.path.DISPLAY_3_ADDR))
+    fig.savefig(str(env.DISPLAY_3_ADDR))
     #plt.savefig(f'{output_dir}/eps_page3.pdf', bbox_inches='tight')
     
     del df
     gc.collect()
     
+    return

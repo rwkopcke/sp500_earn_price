@@ -1,6 +1,6 @@
 [project]
 name = "sp500-earn-price"
-version = "2025.05.05"
+version = "2025.07.01"
 description = "Compares S&P500 earnings yield to 10-year TIPs rate"
 readme = "README.md"
 requires-python = ">=3.13.1"

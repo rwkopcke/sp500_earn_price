@@ -1,5 +1,4 @@
 import polars as pl
-import sys
 
 def plots_page0(ax, df,
                 title= None, 

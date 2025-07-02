@@ -6,7 +6,6 @@
         import sp500_pe.helper_func as hp
 '''
 import sys
-
 from datetime import datetime
 
 import openpyxl.utils.cell as ut_cell

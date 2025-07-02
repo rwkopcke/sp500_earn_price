@@ -11,7 +11,7 @@
 
 ### update_data.py
 - reads new data from .xlsx workbooks in input_dir
-- S&P data downloaded from S&P's weekly posts
+- S&P data downloaded from S&P's "weekly" posts
 - TIPS data downloaded from FRED database
 - writes json and parquet files to output_dir
 - archives the workbooks from input_dir
@@ -24,7 +24,7 @@
     - page0: projected versus actual earnings
     - page1: future and historical price-earnings ratios
     - page2: margin and equity premium using trailing earnings
-    - page3: equity premium usingnprojected earnings
+    - page3: equity premium using projected earnings
 
 ### display_ind_data.py
 - reads sp500_ind_df.parquet in output_dir
@@ -42,19 +42,29 @@
 */sp500_earn_price % tree
 ```     
 .
-├── README.md
 ├── exe_earn_price.py
 ├── helper_func_module
 │   ├── __pycache__
 │   ├── display_helper_func.py
+│   ├── display_ind_data_read_df.py
+│   ├── display_read_history.py
+│   ├── display_read_proj_dict.py
+│   ├── display_read_record_dict.py
 │   ├── helper_func.py
 │   ├── plot_func.py
 │   ├── plot_ind_func.py
-│   └── read_data_func.py
+│   ├── read_data_func.py
+│   ├── update_proj_hist_files.py
+│   ├── update_record.py
+│   ├── update_write_history_and_industry_files.py
+│   ├── update_write_proj_file.py
+│   ├── update_write_proj_files.py
+│   └── update_write_record.py
 ├── input_output
 │   ├── backup_dir
 │   │   ├── backup_ind_df.parquet
 │   │   ├── backup_pe_df_actuals.parquet
+│   │   ├── backup_pe_estimates_df.parquet
 │   │   └── backup_record_dict.json
 │   ├── display_dir
 │   │   ├── eps_page0.pdf
@@ -65,14 +75,12 @@
 │   │   ├── eps_page5.pdf
 │   │   └── eps_page6.pdf
 │   ├── input_dir
-│   │   └── DFII10.xlsx
+│   │   ├── DFII10.xlsx
+│   │   └── sp-500-eps-est 2025 06 17.xlsx
 │   ├── output_dir
-│   │   ├── estimates
-│   │   │   ├── sp-500-eps-est 2017-07-05.parquet
-            | ...
-│   │   │   └── sp-500-eps-est 2025-01-31.parquet
 │   │   ├── sp500_ind_df.parquet
-│   │   └── sp500_pe_df_actuals.parquet
+│   │   ├── sp500_pe_df_actuals.parquet
+│   │   └── sp500_pe_df_estimates.parquet
 │   └── record_dict.json
 ├── main_script_module
 │   ├── __pycache__
@@ -81,27 +89,22 @@
 │   ├── sp_paths.py
 │   └── update_data.py
 ├── pyproject.toml
+├── README.md
 └── uv.lock
 ```
 <br>
 <br>
 
 ## Instructions
-0. Set ARCHIVE_DIR in main_script_module/paths.py
+0. Set ARCHIVE_DIR in main_script_module/sp_paths.py
 
 1. Put new .xlsx from S&P into input_dir
     - https://www.spglobal.com/spdji/en/search/?query=index+earnings&activeTab=all
     - rename: sp-500-eps-est YYYY MM DD.xlsx
     
-2. Put new .xlsx from FRED into input_dir
+2. Put new data from FRED into input_dir
     - https://fred.stlouisfed.org/series/DFII10/chart
-    - rename: DFII10.xlsx
-    - to create this .xlsx
-        - select quarterly, end-of-period observations
-        - select max period in FRED
-        - download as .xls from FRED
-        - add observation for date of S&P .xlsx as last row
-        - save .xls as .xlsx into input_dir
+    - In DFII10.xlsx, add real interest rates for dates that match SP's new file dates
 
 3. Run (from sp500_earn_price/) uv run exe_earn_price.py
 
@@ -114,7 +117,7 @@
         - moves sp500_ind_df.parquet to backup_dir/
         - writes new sp500_pe_df_actuals.parquet to output_dir/
         - writes new sp500_ind_df.parquet to output_dir/
-        - writes output files to output_dir/estimates/
+        - writes new sp500_pe_df_estimates.parquet to output_dir/
 
     - action 1: display_data.py
         - reads record_dict.json
@@ -131,19 +134,17 @@
 
 ## Other Information
 ### sp_paths.py
--  Contains global addresses for all files
-    - addresses of all folders and files (except the ARCHIVE_DIR) fixed by the location of the sp500_ep_project folder, specified by user
+-  Contains absolute address of ARCHIVE_DIR
     - user must specify location of ARCHIVE_DIR which contains input files after they have been read
-    - addresses the project files fixed by the tree shown above for the file structure
-- uses Path()
+-  Contains addresses for all files relative to the address of the project file
+    - addresses of all folders and files (except the ARCHIVE_DIR) fixed by the location of the sp500_ep_project folder, specified by user
+- uses pathlib's Path()
 
 ### output_dir/
 #### sp-500-eps-est YYYY MM DD.parquet
 - polars dataframe with projected earnings
 - from sp-500-eps-est YYYY MM DD.xlsx
 - uses files with the latest date for each quarter
-- creates one sp-500-eps-est YYYY-MM-DD.parquet file for each input file
-
 #### sp500_pe_df_actuals.parquet
 - one polars dataframe for all historical data
 - updated from new input data
@@ -159,9 +160,9 @@
 1. see sp_paths.py
 2. debug
     - ensure that DFII10.xlsx is in input_dir
-    - move the latest sp input file from archive to input_dir
-    - replace record_dict.json with its backup file from backup_dir
+    - copy last workbook of estimates, giving it a more recent date
+    - update DFII10 for this new date
 3. reinitialize
     - ensure that DFII10.xlsx in INPUT_DIR has data for all quarters
-    - where indicated in sp_paths.py insert command INPUT_DIR = ARCHIVE_DIR
-    - after reinitialization, remove the command INPUT_DIR = ARCHIVE_DIR
+    - where indicated in sp_paths.py uncomment INPUT_DIR = ARCHIVE_DIR
+    - after reinitialization, recomment INPUT_DIR = ARCHIVE_DIR

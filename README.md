@@ -38,7 +38,7 @@
 - https://www.spglobal.com/spdji/en/search/?query=index+earnings&activeTab=all
 - https://fred.stlouisfed.org/series/DFII10/chart
 
-### file structure
+### project file structure
 */sp500_earn_price % tree
 ```     
 .
@@ -86,7 +86,7 @@
 │   ├── __pycache__
 │   ├── display_data.py
 │   ├── display_ind_data.py
-│   ├── sp_paths.py
+│   ├── sp_env.py
 │   └── update_data.py
 ├── pyproject.toml
 ├── README.md
@@ -96,7 +96,7 @@
 <br>
 
 ## Instructions
-0. Set ARCHIVE_DIR in main_script_module/sp_paths.py
+0. Set ARCHIVE_DIR in main_script_module/sp_env.py
 
 1. Put new .xlsx from S&P into input_dir
     - https://www.spglobal.com/spdji/en/search/?query=index+earnings&activeTab=all
@@ -133,7 +133,7 @@
 <br>
 
 ## Other Information
-### sp_paths.py
+### sp_env.py
 -  Contains absolute address of ARCHIVE_DIR
     - user must specify location of ARCHIVE_DIR which contains input files after they have been read
 -  Contains addresses for all files relative to the address of the project file
@@ -157,12 +157,12 @@
 <br>
 
 #### To recreate/reinitialize output files from all archived history
-1. see sp_paths.py
+1. see sp_env.py
 2. debug
     - ensure that DFII10.xlsx is in input_dir
     - copy last workbook of estimates, giving it a more recent date
     - update DFII10 for this new date
 3. reinitialize
     - ensure that DFII10.xlsx in INPUT_DIR has data for all quarters
-    - where indicated in sp_paths.py uncomment INPUT_DIR = ARCHIVE_DIR
+    - where indicated in sp_env.py uncomment INPUT_DIR = ARCHIVE_DIR
     - after reinitialization, recomment INPUT_DIR = ARCHIVE_DIR

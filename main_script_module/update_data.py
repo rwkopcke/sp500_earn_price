@@ -33,7 +33,7 @@ import polars.selectors as cs
 
 from openpyxl import load_workbook
 
-from main_script_module import sp_paths as sp
+from main_script_module import sp_env as sp
 from helper_func_module import update_record
 from helper_func_module import update_write_history_and_industry_files
 from helper_func_module import update_proj_hist_files

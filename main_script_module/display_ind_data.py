@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import seaborn as sn
 import numpy as np
 
-from main_script_module import sp_paths as sp
+from main_script_module import sp_env as sp
 from helper_func_module import display_ind_data_read_df
 
 @dataclass(frozen= True)

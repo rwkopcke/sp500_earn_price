@@ -11,7 +11,7 @@ import gc
 import polars as pl
 import matplotlib.pyplot as plt
 
-from main_script_module import sp_paths as sp
+from main_script_module import sp_env as sp
 from helper_func_module import plot_func as pf
 from helper_func_module import display_helper_func as dh
 from helper_func_module import display_read_record_dict

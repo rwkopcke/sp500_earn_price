@@ -6,7 +6,7 @@
         and writes a record of the files that it has read and writen
         as a dictionary to a .json file
         
-   see sp_paths.py
+   see sp_env.py
         for the addresses of the files within this project are declared
         for advice in resetting paths for debugging and for reinitializing
         the project's output files
@@ -21,7 +21,7 @@
         actual data reported by S&P, plus actual values for the 10-year TIPS.
    
    The addresses of documents for this project appear in this program's 
-   project directory: S&P500_PE/sp500_pe/sp_paths.py
+   project directory: S&P500_PE/sp500_pe/sp_env.py
 '''
 
 #######################  Parameters  ###################################
@@ -166,7 +166,7 @@ def update():
 ## +++++  set immutable parameters  ++++++++++++++++++++++++++++++++++++++++
 ## +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ 
 
-    # fetch project immutable params specified in sp_paths,py
+    # fetch project immutable params specified in sp_env,py
     env = sp.params
     # fetch update_data (local) immutable params, from class above
     loc_env = Fixed_Update_Parameters()

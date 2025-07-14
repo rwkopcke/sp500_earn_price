@@ -17,7 +17,7 @@ def main():
             print(f'{key}: {action_dict[key]}')
     
         action = input(
-            '\nEnter the key above for the intended action: ')
+            '\nEnter the key shown above for the intended action: ')
         
         match action:
             case "0":

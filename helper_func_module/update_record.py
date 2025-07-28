@@ -30,7 +30,7 @@ def update(env, loc_env):
     
     return_empty_objects = [dict(), set(), set()]
     
-    # load names of new data files, return if none
+    # READ: load names of new data files, return if none
     input_sp_files_set = \
         set(str(f.name) 
             for f in input_sp_dir.glob('sp-500-eps*.xlsx'))
@@ -49,12 +49,13 @@ def update(env, loc_env):
         print('============================================\n')
         return return_empty_objects
     
-    record_dict = {}
+    # READ: record_dict
     if address.exists():
         with open(address,'r') as f:
             record_dict = json.load(f)
             
-    # intitalize a blank dict if necessary
+    # use blank dict if necessary
+    record_dict = {}
     if ((not address.exists()) | 
         (not record_dict)):
         print('\n============================================')
@@ -69,7 +70,7 @@ def update(env, loc_env):
                        'prev_used_files': [],
                        'prev_files': []}
         
-    # if prev record_dict exists, write backup
+    # WRITE: if prev record_dict exists, write backup
     else:
         with open(backup_address, 'w') as f:
             json.dump(record_dict, f, indent= 4)
@@ -159,6 +160,15 @@ def update(env, loc_env):
     
     record_dict['sources']['s&p'] = sp_source
     record_dict['sources']['tips'] = rr_source
+    
+    
+    print(new_files_set)
+    print(record_dict['latest_used_file'])
+    print(files_to_read_set)
+    print(record_dict)
+    
+    quit()
+    sys.exit()
     
     return [record_dict, new_files_set, files_to_read_set]
     

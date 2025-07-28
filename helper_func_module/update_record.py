@@ -24,8 +24,6 @@ def update(env, loc_env):
     backup_address = env.BACKUP_RECORD_DICT_ADDR
     input_sp_dir = env.INPUT_DIR
     input_rr_addr = env.INPUT_RR_ADDR
-    sp_source = env.SP_SOURCE
-    rr_source = env.REAL_RATE_SOURCE
     yr_qtr = loc_env.YR_QTR_NAME
     
     return_empty_objects = [dict(), set(), set()]
@@ -34,7 +32,8 @@ def update(env, loc_env):
     input_sp_files_set = \
         set(str(f.name) 
             for f in input_sp_dir.glob('sp-500-eps*.xlsx'))
-        
+    
+    # if new input data is not complete, return up chain to main    
     if not input_sp_files_set:
         print('\n============================================')
         print(f'{input_sp_dir} contains no sp input files')
@@ -55,9 +54,9 @@ def update(env, loc_env):
             record_dict = json.load(f)
             
     # use blank dict if necessary
-    record_dict = {}
     if ((not address.exists()) | 
         (not record_dict)):
+        record_dict = {}
         print('\n============================================')
         print(f'No record_dict.json exists at\n{address}')
         print(f'or record_dict is "falsey"')
@@ -85,7 +84,7 @@ def update(env, loc_env):
     record_dict['prev_files'] = \
         sorted(list(prev_files_set | new_files_set), reverse= True)
     
-# if nothing new, return to update_data, then exe_earn_price
+# if nothing new, return up the chain to main
     if not new_files_set:
         print('\n============================================')
         print(f'No previously unseen files at')
@@ -158,17 +157,8 @@ def update(env, loc_env):
     record_dict['latest_used_file'] = \
         record_dict['prev_used_files'][0]['file']
     
-    record_dict['sources']['s&p'] = sp_source
-    record_dict['sources']['tips'] = rr_source
-    
-    
-    print(new_files_set)
-    print(record_dict['latest_used_file'])
-    print(files_to_read_set)
-    print(record_dict)
-    
-    quit()
-    sys.exit()
+    record_dict['sources']['s&p'] = env.SP_SOURCE
+    record_dict['sources']['tips'] = env.REAL_RATE_SOURCE
     
     return [record_dict, new_files_set, files_to_read_set]
     

@@ -176,6 +176,7 @@ def update():
 ## +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ 
 
     # load record_dict - if record_dist is None, create it
+    
     [record_dict, new_files_set, files_to_read_set] = \
          update_record.update(env, loc_env)
     

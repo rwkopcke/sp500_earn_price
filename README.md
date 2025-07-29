@@ -41,10 +41,11 @@
 ### project file structure
 */sp500_earn_price % tree
 ```     
+richardkopcke@MacBookPro sp500_earn_price % tree
 .
+├── __init__.py
 ├── exe_earn_price.py
 ├── helper_func_module
-│   ├── __pycache__
 │   ├── display_helper_func.py
 │   ├── display_ind_data_read_df.py
 │   ├── display_read_history.py
@@ -83,7 +84,6 @@
 │   │   └── sp500_pe_df_estimates.parquet
 │   └── record_dict.json
 ├── main_script_module
-│   ├── __pycache__
 │   ├── display_data.py
 │   ├── display_ind_data.py
 │   ├── sp_env.py
@@ -91,6 +91,9 @@
 ├── pyproject.toml
 ├── README.md
 └── uv.lock
+
+10 directories, 63 files
+richardkopcke@MacBookPro sp500_earn_price % 
 ```
 <br>
 <br>

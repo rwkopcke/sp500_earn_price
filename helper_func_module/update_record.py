@@ -54,8 +54,7 @@ def update(env, loc_env):
             record_dict = json.load(f)
             
     # use blank dict if necessary
-    if ((not address.exists()) | 
-        (not record_dict)):
+    if (not address.exists()):
         record_dict = {}
         print('\n============================================')
         print(f'No record_dict.json exists at\n{address}')
@@ -115,7 +114,7 @@ def update(env, loc_env):
     # one dict for each prev_used_file
     prev_used_files_list = record_dict['prev_used_files']
     if not prev_used_files_list:
-        used_df = pl.DataFrame()
+        used_df = data_df
         prev_used_files_set = set()
         
     else:    
@@ -131,12 +130,12 @@ def update(env, loc_env):
     # in each group, using all cols, sort_by date, select the last row
     # in new_files_list
     
-    used_df = pl.concat([used_df.cast({'date': pl.Date}), 
-                         data_df.select(used_df.columns)],
-                         how= 'vertical')\
-                .group_by(yr_qtr)\
-                .agg(pl.all().sort_by('date').last())\
-                .sort(by= yr_qtr)
+        used_df = pl.concat([used_df.cast({'date': pl.Date}),
+                            data_df.select(used_df.columns)],
+                            how= 'vertical')\
+                    .group_by(yr_qtr)\
+                    .agg(pl.all().sort_by('date').last())\
+                    .sort(by= yr_qtr)
 
     # and files to be used from the new input files
     used_files_set = set(pl.Series(used_df['file']).to_list())
@@ -152,7 +151,7 @@ def update(env, loc_env):
     record_dict['prev_used_files'] = sorted(
         update_df['update_used_files'],
         reverse= True,
-        key= lambda x: x[yr_qtr])
+        key= lambda x: x['date'])
     
     record_dict['latest_used_file'] = \
         record_dict['prev_used_files'][0]['file']
